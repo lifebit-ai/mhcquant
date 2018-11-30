@@ -74,7 +74,7 @@ if (params.help){
 
 
 // Validate inputs
-params.mzmls = params.mzmls ?: { log.error "No read data privided. Make sure you have used the '--mzmls' option."; exit 1 }()
+params.mzmls_folder = params.mzmls_folder ?: { log.error "No read data privided. Make sure you have used the '--mzmls' option."; exit 1 }()
 params.fasta = params.fasta ?: { log.error "No read data privided. Make sure you have used the '--fasta' option."; exit 1 }()
 params.outdir = params.outdir ?: { log.warn "No output directory provided. Will put the results into './results'"; return "./results" }()
 
@@ -142,9 +142,10 @@ if( workflow.profile == 'awsbatch') {
 /*
  * Create a channel for input mzml files
  */
+ mzmls="${params.mzmls_folder}/*.${params.mzmls_extension}"
 Channel
-    .fromPath( params.mzmls )
-    .ifEmpty { exit 1, "Cannot find any reads matching: ${params.mzmls}\nNB: Path needs to be enclosed in quotes!" }
+    .fromPath(mzmls)
+    .ifEmpty { exit 1, "Cannot find any reads matching: ${mzmls}\nNB: Path needs to be enclosed in quotes!" }
     .into { input_mzmls; input_mzmls_align }
 
 
@@ -225,7 +226,7 @@ process generate_decoy_database {
 
     output:
      file "${fastafile.baseName}_decoy.fasta" into (fastafile_decoy_1, fastafile_decoy_2)
-     
+
     script:
      """
      DecoyDatabase  -in ${fastafile} -out ${fastafile.baseName}_decoy.fasta -decoy_string DECOY_ -decoy_string_position prefix
@@ -237,7 +238,7 @@ process generate_decoy_database {
  * STEP 2 - run comet database search
  */
 process db_search_comet {
- 
+
     input:
      file mzml_file from input_mzmls
      file fasta_decoy from fastafile_decoy_1.first()
@@ -258,7 +259,7 @@ process db_search_comet {
  */
 process index_peptides {
     publishDir "${params.outdir}/"
- 
+
     input:
      file id_file from id_files
      file fasta_decoy from fastafile_decoy_2.first()
@@ -279,7 +280,7 @@ process index_peptides {
  */
 process calculate_fdr_for_idalignment {
     publishDir "${params.outdir}/"
- 
+
     input:
      file id_file_idx from id_files_idx
 
@@ -299,7 +300,7 @@ process calculate_fdr_for_idalignment {
  */
 process filter_fdr_for_idalignment {
     publishDir "${params.outdir}/"
- 
+
     input:
      file id_file_idx_fdr from id_files_idx_fdr
 
@@ -388,7 +389,7 @@ process merge_aligned_idxml_files {
 
     output:
      file "all_ids_merged.idXML" into id_merged
-    
+
     script:
      """
      IDMerger -in $ids_aligned -out all_ids_merged.idXML -threads ${task.cpus}  -annotate_file_origin
@@ -402,7 +403,7 @@ process merge_aligned_idxml_files {
  */
 process extract_psm_features_for_percolator {
     publishDir "${params.outdir}/"
- 
+
     input:
      file id_file_merged from id_merged
 
@@ -411,7 +412,7 @@ process extract_psm_features_for_percolator {
 
     script:
      """
-     PSMFeatureExtractor -in ${id_file_merged} -out ${id_file_merged.baseName}_psm.idXML -threads ${task.cpus} 
+     PSMFeatureExtractor -in ${id_file_merged} -out ${id_file_merged.baseName}_psm.idXML -threads ${task.cpus}
      """
 
 }
@@ -424,7 +425,7 @@ process extract_psm_features_for_percolator {
 ///To Do: add peptide level variable
 process run_percolator {
     publishDir "${params.outdir}/"
- 
+
     input:
      file id_file_psm from id_files_merged_psm
 
@@ -433,7 +434,7 @@ process run_percolator {
 
     script:
      """
-     PercolatorAdapter -in ${id_file_psm} -out ${id_file_psm.baseName}_psm_perc.idXML -trainFDR 0.05 -testFDR 0.05 -threads ${task.cpus} -enzyme no_enzyme $fdr_level 
+     PercolatorAdapter -in ${id_file_psm} -out ${id_file_psm.baseName}_psm_perc.idXML -trainFDR 0.05 -testFDR 0.05 -threads ${task.cpus} -enzyme no_enzyme $fdr_level
      """
 
 }
@@ -444,7 +445,7 @@ process run_percolator {
  */
 process filter_q_value {
     publishDir "${params.outdir}/"
- 
+
     input:
      file id_file_perc from id_files_merged_psm_perc
 
@@ -464,7 +465,7 @@ process filter_q_value {
  */
 process quantify_identifications_targeted {
     publishDir "${params.outdir}/"
- 
+
     input:
      file id_file_quant from id_files_merged_psm_perc_filtered
      file mzml_quant from mzml_files_aligned
@@ -491,7 +492,7 @@ process link_extracted_features {
 
     output:
      file "all_features_merged.consensusXML" into consensus_file
-    
+
     script:
      """
      FeatureLinkerUnlabeledKD -in $feautres -out 'all_features_merged.consensusXML' -threads ${task.cpus}
@@ -505,7 +506,7 @@ process link_extracted_features {
  */
 process resolve_conflicts {
     publishDir "${params.outdir}/"
- 
+
     input:
      file consensus from consensus_file
 
@@ -525,7 +526,7 @@ process resolve_conflicts {
  */
 process export_text {
     publishDir "${params.outdir}/"
- 
+
     input:
      file consensus_resolved from consensus_file_resolved
 
