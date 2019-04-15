@@ -576,8 +576,13 @@ process visualisations {
     file '.report.json' into viz
 
     script:
-    """ 
-    csv2json.py $consensus "Consensus features extracted from all_features_merged_resolved.consensusXML" ${consensus}.json
+    """
+    echo -e "MAP\tid\tfilename\tlabel\tsize" > map.tsv
+    awk -F"\t" '$1 == "MAP" { print $0 }' all_features_merged_resolved.csv >> map.tsv
+    tsv2csv.py < map.tsv > tmp.csv
+    cut -d',' -f 2- tmp.csv > map.csv
+    csv2json.py map.csv "Information about the different mzML files that were provided initially" map.json
+
     combine_reports.py .
     """
 }
