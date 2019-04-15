@@ -560,6 +560,28 @@ process export_mztab {
 
 }
 
+
+/*
+ * STEP 18 - generate JSON report to display on Deploit
+ */
+process visualisations {
+    publishDir "${params.outdir}/Visualisations", mode: 'copy'
+
+    container 'lifebitai/vizjson:latest'
+
+    input:
+    set file(consensus) from consensus_text
+
+    output:
+    file '.report.json' into viz
+
+    script:
+    """ 
+    csv2json.py $consensus "Consensus features extracted from all_features_merged_resolved.consensusXML" ${consensus}.json
+    combine_reports.py .
+    """
+}
+
 /*
  * Completion e-mail notification
  */
