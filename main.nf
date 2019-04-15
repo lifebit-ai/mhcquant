@@ -595,12 +595,24 @@ process visualisations {
     cut -d',' -f 2- tmp.csv > protein.csv
     csv2json.py protein.csv "A table to show the protein ids corresponding to the peptides that were detected (No protein inference was performed)" protein.json
 
-    echo -e "#UNASSIGNEDPEPTIDE\trt\tmz\tscore\trank\tsequence\tcharge\taa before\taa after\tscore type\tsearch identifier\taccessions\tFFId category\tfeature id\tfile origin\tmap index\tspectrum reference\tCOMET:IonFrac\tCOMET:deltCn\tCOMET:deltLCn\tCOMET:lnExpect\tCOMET:lnNumSP\tCOMET:lnRankSP\tMS:1001491\tMS:1001492\tMS:1001493\tMS:1002252\tMS:1002253\tMS:1002254\tMS:1002255\tMS:1002256\tMS:1002257\tMS:1002258\tMS:1002259\tnum matched peptides\tprotein references\ttarget decoy" > unassigned.tsv
+    echo -e "UNASSIGNEDPEPTIDE\trt\tmz\tscore\trank\tsequence\tcharge\taa before\taa after\tscore type\tsearch identifier\taccessions\tFFId category\tfeature id\tfile origin\tmap index\tspectrum reference\tCOMET:IonFrac\tCOMET:deltCn\tCOMET:deltLCn\tCOMET:lnExpect\tCOMET:lnNumSP\tCOMET:lnRankSP\tMS:1001491\tMS:1001492\tMS:1001493\tMS:1002252\tMS:1002253\tMS:1002254\tMS:1002255\tMS:1002256\tMS:1002257\tMS:1002258\tMS:1002259\tnum matched peptides\tprotein references\ttarget decoy" > unassigned.tsv
     awk -F"\t" '\$1 == "UNASSIGNEDPEPTIDE" { print \$0 }' all_features_merged_resolved.csv >> unassigned.tsv
     tsv2csv.py < unassigned.tsv > tmp.csv
     cut -d',' -f 2- tmp.csv > unassigned.csv
     csv2json.py unassigned.csv "A table to show the PSMs that were identified but couldn't be quantified to a precursor feature on MS Level 1" unassigned.json
 
+    echo -e "CONSENSUS\trt cf\tmz cf\tintensity cf\tcharge cf\twidth cf\tquality cf\trt 0\tmz 0\tintensity 0\tcharge 0\twidth 0\trt 1\tmz 1\tintensity 1\tcharge 1\twidth 1\trt 2\tmz 2\tintensity 2\tcharge 2\twidth 2\trt 3\tmz 3\tintensity 3\tcharge 3\twidth 3" > consensus.tsv
+    awk -F"\t" '\$1 == "CONSENSUS" { print \$0 }' all_features_merged_resolved.csv >> consensus.tsv
+    tsv2csv.py < consensus.tsv > tmp.csv
+    cut -d',' -f 2- tmp.csv > consensus.csv
+    csv2json.py consensus.csv "" consensus.json
+
+    echo -e "PEPTIDE\trt\tmz\tscore\trank\tsequence\tcharge\taa_before\taa_after\tscore_type\tsearch_identifier\taccessions\tFFId_category\tfea" > peptide.tsv
+    awk -F"\t" '\$1 == "PEPTIDE" { print \$0 }' all_features_merged_resolved.csv >> peptide.tsv
+    tsv2csv.py < peptide.tsv > tmp.csv
+    cut -d',' -f 2- tmp.csv > peptide.csv
+    csv2json.py peptide.csv "Table to show the peptide hits that were identified and correspond to the consensus features table" peptide.json
+    
     combine_reports.py .
     """
 }
