@@ -605,7 +605,7 @@ process visualisations {
     awk -F"\t" '\$1 == "CONSENSUS" { print \$0 }' all_features_merged_resolved.csv >> consensus.tsv
     tsv2csv.py < consensus.tsv > tmp.csv
     cut -d',' -f 2- tmp.csv > consensus.csv
-    csv2json.py consensus.csv "" consensus.json
+    csv2json.py consensus.csv "A table to show the precursor features that were identified in multiple runs" consensus.json
 
     echo -e "PEPTIDE\trt\tmz\tscore\trank\tsequence\tcharge\taa_before\taa_after\tscore_type\tsearch_identifier\taccessions\tFFId_category\tfea" > peptide.tsv
     awk -F"\t" '\$1 == "PEPTIDE" { print \$0 }' all_features_merged_resolved.csv >> peptide.tsv
